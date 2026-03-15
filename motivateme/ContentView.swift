@@ -20,6 +20,27 @@ let pastelColors: [Color] = [
     Color(red: 0.95, green: 0.88, blue: 1.0),  // pastel lilac
 ]
 
+struct CardView: View {
+    let color: Color
+    let bottomInset: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            color
+                .ignoresSafeArea()
+
+            Button(action: {}) {
+                Image(systemName: "heart")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(.black)
+                    .padding(16)
+            }
+            .glassEffect(.clear.interactive(), in: Circle())
+            .padding(.bottom, bottomInset + 24)
+        }
+    }
+}
+
 struct ContentView: View {
     @State private var currentIndex: Int = 0
     @State private var dragOffset: CGFloat = 0
@@ -28,23 +49,20 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Previous color (above current)
+                // Previous card (above)
                 if currentIndex > 0 {
-                    pastelColors[currentIndex - 1]
-                        .ignoresSafeArea()
+                    CardView(color: pastelColors[currentIndex - 1], bottomInset: geo.safeAreaInsets.bottom)
                         .offset(y: -geo.size.height + dragOffset)
                 }
 
-                // Next color (below current)
+                // Next card (below)
                 if currentIndex < pastelColors.count - 1 {
-                    pastelColors[currentIndex + 1]
-                        .ignoresSafeArea()
+                    CardView(color: pastelColors[currentIndex + 1], bottomInset: geo.safeAreaInsets.bottom)
                         .offset(y: geo.size.height + dragOffset)
                 }
 
-                // Current color
-                pastelColors[currentIndex]
-                    .ignoresSafeArea()
+                // Current card
+                CardView(color: pastelColors[currentIndex], bottomInset: geo.safeAreaInsets.bottom)
                     .offset(y: dragOffset)
             }
             .gesture(
@@ -52,7 +70,6 @@ struct ContentView: View {
                     .onChanged { value in
                         guard !isAnimating else { return }
                         let translation = value.translation.height
-                        // Resist at boundaries
                         if (currentIndex == 0 && translation > 0) ||
                            (currentIndex == pastelColors.count - 1 && translation < 0) {
                             dragOffset = translation * 0.15
@@ -78,6 +95,34 @@ struct ContentView: View {
                         }
                     }
             )
+            .overlay(alignment: .top) {
+                HStack {
+                    Button(action: {}) {
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(.black)
+                            .padding(12)
+                    }
+                    .glassEffect(.clear.interactive(), in: Circle())
+
+                    Spacer()
+
+                    Text("Sonnet")
+                        .font(.system(size: 17, weight: .semibold))
+
+                    Spacer()
+
+                    Button(action: {}) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 18, weight: .regular))
+                            .foregroundStyle(.black)
+                            .padding(12)
+                    }
+                    .glassEffect(.clear.interactive(), in: Circle())
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, geo.safeAreaInsets.top + 64)
+            }
         }
         .ignoresSafeArea()
     }
