@@ -45,11 +45,18 @@ let circleColors: [Color] = [
 
 let subtitleColor = Color(red: 118/255, green: 118/255, blue: 118/255)
 
-let todayFormatted: String = {
+let todayIndex: Int = {
+    let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+    return (day - 1) % quotes.count
+}()
+
+func dateString(for index: Int) -> String {
+    let offset = index - todayIndex
+    let date = Calendar.current.date(byAdding: .day, value: offset, to: Date()) ?? Date()
     let f = DateFormatter()
     f.dateFormat = "MMMM d, yyyy"
-    return f.string(from: Date())
-}()
+    return f.string(from: date)
+}
 
 // MARK: - ProfileView
 
@@ -64,7 +71,7 @@ struct ProfileView: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Color.white.ignoresSafeArea()
+            Color(red: 250/255, green: 250/255, blue: 250/255).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 ZStack {
@@ -87,12 +94,17 @@ struct ProfileView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, topInset + 64)
 
-                List {
-                    Section("Favorites") {
-                        if favoriteQuotes.isEmpty {
-                            Text("No favorites yet.")
-                                .foregroundStyle(subtitleColor)
-                        } else {
+                if favoriteQuotes.isEmpty {
+                    Spacer()
+                    Text("Your favorite quotes will show up here.")
+                        .font(.custom("DMMono-Regular", size: 14))
+                        .foregroundStyle(subtitleColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 80)
+                    Spacer()
+                } else {
+                    List {
+                        Section("Favorites") {
                             ForEach(favoriteQuotes) { quote in
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(quote.text)
@@ -105,9 +117,10 @@ struct ProfileView: View {
                             }
                         }
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .padding(.horizontal, 24)
                 }
-                .listStyle(.plain)
-                .padding(.horizontal, 24)
             }
         }
     }
@@ -120,6 +133,7 @@ struct CardView: View {
     let circleColor: Color
     let bottomInset: CGFloat
     let quote: QuoteData
+    let index: Int
     let isFavorited: Bool
     let onFavorite: () -> Void
 
@@ -135,7 +149,7 @@ struct CardView: View {
                     .blur(radius: 40)
 
                 VStack(spacing: 24) {
-                    Text(todayFormatted.uppercased())
+                    Text(dateString(for: index).uppercased())
                         .font(.custom("DMMono-Regular", size: 14))
                         .foregroundStyle(subtitleColor)
                         .multilineTextAlignment(.center)
@@ -154,18 +168,29 @@ struct CardView: View {
                         .multilineTextAlignment(.center)
                         .lineSpacing(6)
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 24)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            Button(action: onFavorite) {
-                Image(systemName: isFavorited ? "heart.fill" : "heart")
-                    .font(.system(size: 22, weight: .regular))
-                    .foregroundStyle(.black)
-                    .padding(16)
+            HStack(spacing: 8) {
+                ShareLink(item: "\"\(quote.text)\" — \(quote.author)") {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(.black)
+                        .padding(16)
+                }
+                .glassEffect(.clear.interactive(), in: Circle())
+                .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+
+                Button(action: onFavorite) {
+                    Image(systemName: isFavorited ? "heart.fill" : "heart")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(isFavorited ? circleColor : .black)
+                        .padding(16)
+                }
+                .glassEffect(.clear.interactive(), in: Circle())
+                .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
             }
-            .glassEffect(.clear.interactive(), in: Circle())
-            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
             .padding(.bottom, bottomInset + 24)
         }
     }
@@ -230,6 +255,7 @@ struct ContentView: View {
                             circleColor: circleColors[currentIndex - 1],
                             bottomInset: geo.safeAreaInsets.bottom,
                             quote: quotes[currentIndex - 1],
+                            index: currentIndex - 1,
                             isFavorited: favorites.contains(currentIndex - 1),
                             onFavorite: { toggleFavorite(currentIndex - 1) }
                         )
@@ -243,6 +269,7 @@ struct ContentView: View {
                             circleColor: circleColors[currentIndex + 1],
                             bottomInset: geo.safeAreaInsets.bottom,
                             quote: quotes[currentIndex + 1],
+                            index: currentIndex + 1,
                             isFavorited: favorites.contains(currentIndex + 1),
                             onFavorite: { toggleFavorite(currentIndex + 1) }
                         )
@@ -255,6 +282,7 @@ struct ContentView: View {
                         circleColor: circleColors[currentIndex],
                         bottomInset: geo.safeAreaInsets.bottom,
                         quote: quotes[currentIndex],
+                        index: currentIndex,
                         isFavorited: favorites.contains(currentIndex),
                         onFavorite: { toggleFavorite(currentIndex) }
                     )
@@ -291,35 +319,40 @@ struct ContentView: View {
                         }
                 )
                 .overlay(alignment: .top) {
-                    HStack {
-                        Button(action: {
-                            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                showProfile = true
-                            }
-                        }) {
-                            Image(systemName: "person.circle")
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundStyle(.black)
-                                .padding(12)
-                        }
-                        .glassEffect(.clear.interactive(), in: Circle())
-                        .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-
-                        Spacer()
-
+                    ZStack {
                         Text("Sonnet")
                             .font(.system(size: 17, weight: .semibold))
+                            .frame(maxWidth: .infinity)
 
-                        Spacer()
+                        HStack {
+                            Button(action: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                    showProfile = true
+                                }
+                            }) {
+                                Image(systemName: "person.circle")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.black)
+                                    .padding(12)
+                            }
+                            .glassEffect(.clear.interactive(), in: Circle())
+                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
 
-                        ShareLink(item: "\"\(quotes[currentIndex].text)\" — \(quotes[currentIndex].author)") {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundStyle(.black)
-                                .padding(12)
+                            Spacer()
+
+                            Button(action: { navigate(to: todayIndex, screenHeight: geo.size.height) }) {
+                                Text("Today")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 14)
+                            }
+                            .frame(height: 42)
+                            .glassEffect(.clear.interactive(), in: Capsule())
+                            .overlay(Capsule().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                            .opacity(currentIndex != todayIndex ? 1 : 0)
+                            .disabled(currentIndex == todayIndex)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
                         }
-                        .glassEffect(.clear.interactive(), in: Circle())
-                        .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, geo.safeAreaInsets.top + 64)
