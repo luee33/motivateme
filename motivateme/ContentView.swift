@@ -27,17 +27,19 @@ let quotes: [QuoteData] = [
     QuoteData(text: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt"),
 ]
 
-let pastelColors: [Color] = [
-    Color(red: 1.0,  green: 0.80, blue: 0.82), // pastel pink
-    Color(red: 0.80, green: 0.90, blue: 1.0),  // pastel blue
-    Color(red: 0.80, green: 1.0,  blue: 0.84), // pastel green
-    Color(red: 1.0,  green: 0.93, blue: 0.76), // pastel yellow
-    Color(red: 0.90, green: 0.80, blue: 1.0),  // pastel lavender
-    Color(red: 1.0,  green: 0.85, blue: 0.75), // pastel peach
-    Color(red: 0.78, green: 0.95, blue: 0.95), // pastel mint
-    Color(red: 1.0,  green: 0.80, blue: 0.95), // pastel rose
-    Color(red: 0.85, green: 0.92, blue: 0.80), // pastel sage
-    Color(red: 0.95, green: 0.88, blue: 1.0),  // pastel lilac
+let pastelColors: [Color] = Array(repeating: Color(red: 250/255, green: 250/255, blue: 250/255), count: 10)
+
+let circleColors: [Color] = [
+    Color(red: 0.204, green: 0.780, blue: 0.349), // green
+    Color(red: 0.259, green: 0.522, blue: 0.957), // blue
+    Color(red: 0.957, green: 0.380, blue: 0.380), // red
+    Color(red: 0.957, green: 0.698, blue: 0.204), // yellow
+    Color(red: 0.608, green: 0.349, blue: 0.957), // purple
+    Color(red: 0.957, green: 0.478, blue: 0.204), // orange
+    Color(red: 0.204, green: 0.780, blue: 0.780), // teal
+    Color(red: 0.957, green: 0.204, blue: 0.608), // pink
+    Color(red: 0.204, green: 0.478, blue: 0.204), // dark green
+    Color(red: 0.478, green: 0.204, blue: 0.957), // indigo
 ]
 
 let subtitleColor = Color(red: 118/255, green: 118/255, blue: 118/255)
@@ -52,6 +54,7 @@ let todayFormatted: String = {
 
 struct CardView: View {
     let color: Color
+    let circleColor: Color
     let bottomInset: CGFloat
     let quote: QuoteData
 
@@ -60,26 +63,33 @@ struct CardView: View {
             color
                 .ignoresSafeArea()
 
-            VStack(spacing: 24) {
-                Text(todayFormatted.uppercased())
-                    .font(.custom("DMMono-Regular", size: 12))
-                    .foregroundStyle(subtitleColor)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(6)
+            ZStack {
+                Circle()
+                    .fill(circleColor)
+                    .frame(width: 71, height: 71)
+                    .blur(radius: 40)
 
-                Text(quote.text)
-                    .font(.custom("Lora-Regular", size: 28))
-                    .foregroundStyle(.black)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(8.4)
+                VStack(spacing: 24) {
+                    Text(todayFormatted.uppercased())
+                        .font(.custom("DMMono-Regular", size: 14))
+                        .foregroundStyle(subtitleColor)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(6)
 
-                Text(quote.author.uppercased())
-                    .font(.custom("DMMono-Regular", size: 12))
-                    .foregroundStyle(subtitleColor)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(6)
+                    Text(quote.text)
+                        .font(.custom("Lora-Regular", size: 28))
+                        .foregroundStyle(.black)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(8.4)
+
+                    Text(quote.author.uppercased())
+                        .font(.custom("DMMono-Regular", size: 14))
+                        .foregroundStyle(subtitleColor)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(6)
+                }
+                .padding(.horizontal, 40)
             }
-            .padding(.horizontal, 40)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Button(action: {}) {
@@ -89,6 +99,7 @@ struct CardView: View {
                     .padding(16)
             }
             .glassEffect(.clear.interactive(), in: Circle())
+            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
             .padding(.bottom, bottomInset + 24)
         }
     }
@@ -108,6 +119,7 @@ struct ContentView: View {
                 if currentIndex > 0 {
                     CardView(
                         color: pastelColors[currentIndex - 1],
+                        circleColor: circleColors[currentIndex - 1],
                         bottomInset: geo.safeAreaInsets.bottom,
                         quote: quotes[currentIndex - 1]
                     )
@@ -118,6 +130,7 @@ struct ContentView: View {
                 if currentIndex < pastelColors.count - 1 {
                     CardView(
                         color: pastelColors[currentIndex + 1],
+                        circleColor: circleColors[currentIndex + 1],
                         bottomInset: geo.safeAreaInsets.bottom,
                         quote: quotes[currentIndex + 1]
                     )
@@ -127,6 +140,7 @@ struct ContentView: View {
                 // Current card
                 CardView(
                     color: pastelColors[currentIndex],
+                    circleColor: circleColors[currentIndex],
                     bottomInset: geo.safeAreaInsets.bottom,
                     quote: quotes[currentIndex]
                 )
@@ -171,6 +185,7 @@ struct ContentView: View {
                             .padding(12)
                     }
                     .glassEffect(.clear.interactive(), in: Circle())
+                    .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
 
                     Spacer()
 
@@ -186,6 +201,7 @@ struct ContentView: View {
                             .padding(12)
                     }
                     .glassEffect(.clear.interactive(), in: Circle())
+                    .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, geo.safeAreaInsets.top + 64)
