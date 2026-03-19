@@ -133,6 +133,80 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - FavoritesView
+
+struct FavoritesView: View {
+    let favorites: Set<Int>
+    let topInset: CGFloat
+    let onBack: () -> Void
+
+    var favoriteQuotes: [QuoteData] {
+        quotes.filter { favorites.contains($0.id) }
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Color(red: 250/255, green: 250/255, blue: 250/255).ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                ZStack {
+                    Text("Favorites")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+
+                    HStack {
+                        Button(action: onBack) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundStyle(.black)
+                                .padding(12)
+                        }
+                        .glassEffect(.clear.interactive(), in: Circle())
+                        .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, topInset + 64)
+
+                if favoriteQuotes.isEmpty {
+                    Spacer()
+                    Text("Your favorite quotes will show up here.")
+                        .font(.custom("DMMono-Regular", size: 14))
+                        .foregroundStyle(subtitleColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 80)
+                    Spacer()
+                } else {
+                    List {
+                        ForEach(favoriteQuotes) { quote in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(quote.text)
+                                    .font(.custom("Lora-Regular", size: 16))
+                                Text(quote.author.uppercased())
+                                    .font(.custom("DMMono-Regular", size: 12))
+                                    .foregroundStyle(subtitleColor)
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 24)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .padding(.top, 16)
+                }
+            }
+        }
+    }
+}
+
 // MARK: - CardView
 
 struct CardView: View {
@@ -199,7 +273,7 @@ struct CardView: View {
                 .glassEffect(.clear.interactive(), in: Circle())
                 .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
             }
-            .padding(.bottom, bottomInset + 204)
+            .padding(.bottom, bottomInset + 188)
         }
     }
 }
@@ -213,11 +287,13 @@ struct ContentView: View {
     @State private var favorites: Set<Int> = []
     @State private var showProfile: Bool = false
     @State private var horizontalDragOffset: CGFloat = 0
+    @State private var showFavorites: Bool = false
+    @State private var favDragOffset: CGFloat = 0
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Profile page (sits to the left, slides in)
+                // Profile page (sits to the left, slides in from left)
                 ProfileView(
                     favorites: favorites,
                     topInset: geo.safeAreaInsets.top,
@@ -254,7 +330,7 @@ struct ContentView: View {
                         }
                 )
 
-                // Cards page (slides right when profile opens)
+                // Cards page
                 ZStack {
                     // Previous card (above)
                     if currentIndex > 0 {
@@ -360,32 +436,120 @@ struct ContentView: View {
                             .opacity(currentIndex != todayIndex ? 1 : 0)
                             .disabled(currentIndex == todayIndex)
                             .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
+
+                            Button(action: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                    showFavorites = true
+                                }
+                            }) {
+                                Image(systemName: "heart")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.black)
+                                    .padding(12)
+                            }
+                            .glassEffect(.clear.interactive(), in: Circle())
+                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
                         }
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, geo.safeAreaInsets.top + 64)
                 }
-                .offset(x: (showProfile ? geo.size.width : 0) + horizontalDragOffset)
+                .offset(x: (showProfile ? geo.size.width : showFavorites ? -geo.size.width : 0) + horizontalDragOffset + favDragOffset)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 20)
                         .onChanged { value in
-                            guard !showProfile else { return }
                             let dx = value.translation.width
-                            guard dx > 0 && abs(dx) > abs(value.translation.height) else { return }
-                            horizontalDragOffset = dx
+                            guard abs(dx) > abs(value.translation.height) else { return }
+                            if !showProfile && !showFavorites {
+                                if dx > 0 {
+                                    horizontalDragOffset = dx
+                                } else {
+                                    favDragOffset = dx
+                                }
+                            } else if showProfile && dx < 0 {
+                                horizontalDragOffset = dx
+                            } else if showFavorites && dx > 0 {
+                                favDragOffset = dx
+                            }
                         }
                         .onEnded { value in
-                            guard !showProfile else { return }
+                            let dx = value.translation.width
+                            let vx = value.predictedEndTranslation.width
+                            if !showProfile && !showFavorites {
+                                if dx > geo.size.width * 0.25 || vx > 500 {
+                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                        showProfile = true
+                                        horizontalDragOffset = 0
+                                    }
+                                } else if dx < -geo.size.width * 0.25 || vx < -500 {
+                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                        showFavorites = true
+                                        favDragOffset = 0
+                                    }
+                                } else {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        horizontalDragOffset = 0
+                                        favDragOffset = 0
+                                    }
+                                }
+                            } else if showProfile {
+                                if dx < -geo.size.width * 0.25 || vx < -500 {
+                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                        showProfile = false
+                                        horizontalDragOffset = 0
+                                    }
+                                } else {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        horizontalDragOffset = 0
+                                    }
+                                }
+                            } else if showFavorites {
+                                if dx > geo.size.width * 0.25 || vx > 500 {
+                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                        showFavorites = false
+                                        favDragOffset = 0
+                                    }
+                                } else {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        favDragOffset = 0
+                                    }
+                                }
+                            }
+                        }
+                )
+
+                // Favorites page (sits to the right, slides in from right)
+                FavoritesView(
+                    favorites: favorites,
+                    topInset: geo.safeAreaInsets.top,
+                    onBack: {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            showFavorites = false
+                        }
+                    }
+                )
+                .frame(width: geo.size.width, height: geo.size.height)
+                .offset(x: (showFavorites ? 0 : geo.size.width) + favDragOffset)
+                .gesture(
+                    DragGesture(minimumDistance: 20)
+                        .onChanged { value in
+                            guard showFavorites else { return }
+                            let dx = value.translation.width
+                            guard dx > 0 && abs(dx) > abs(value.translation.height) else { return }
+                            favDragOffset = dx
+                        }
+                        .onEnded { value in
+                            guard showFavorites else { return }
                             let dx = value.translation.width
                             let vx = value.predictedEndTranslation.width
                             if dx > geo.size.width * 0.25 || vx > 500 {
                                 withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showProfile = true
-                                    horizontalDragOffset = 0
+                                    showFavorites = false
+                                    favDragOffset = 0
                                 }
                             } else {
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    horizontalDragOffset = 0
+                                    favDragOffset = 0
                                 }
                             }
                         }
