@@ -146,7 +146,7 @@ struct FavoritesView: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Color(red: 250/255, green: 250/255, blue: 250/255).ignoresSafeArea()
+            Color.white.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 ZStack {
@@ -190,10 +190,11 @@ struct FavoritesView: View {
                             .padding(.vertical, 16)
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white)
+                            .background(circleColors[quote.id].opacity(0.12))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
                             .padding(.horizontal, 24)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                         }
