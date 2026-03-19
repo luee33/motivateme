@@ -184,6 +184,7 @@ struct CardView: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 24, weight: .regular))
                         .foregroundStyle(.black)
+                        .offset(y: -2)
                         .padding(16)
                 }
                 .glassEffect(.clear.interactive(), in: Circle())
