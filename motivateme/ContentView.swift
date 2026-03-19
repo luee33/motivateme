@@ -104,22 +104,29 @@ struct ProfileView: View {
                     Spacer()
                 } else {
                     List {
-                        Section("Favorites") {
+                        Section(header: Text("Favorites").padding(.horizontal, 24)) {
                             ForEach(favoriteQuotes) { quote in
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 8) {
                                     Text(quote.text)
-                                        .font(.custom("Lora-Regular", size: 15))
-                                    Text(quote.author)
+                                        .font(.custom("Lora-Regular", size: 16))
+                                    Text(quote.author.uppercased())
                                         .font(.custom("DMMono-Regular", size: 12))
                                         .foregroundStyle(subtitleColor)
                                 }
-                                .padding(.vertical, 4)
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .padding(.horizontal, 24)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             }
                         }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .padding(.horizontal, 24)
                 }
             }
         }
@@ -172,10 +179,10 @@ struct CardView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 16) {
                 ShareLink(item: "\"\(quote.text)\" — \(quote.author)") {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 22, weight: .regular))
+                        .font(.system(size: 24, weight: .regular))
                         .foregroundStyle(.black)
                         .padding(16)
                 }
@@ -184,14 +191,14 @@ struct CardView: View {
 
                 Button(action: onFavorite) {
                     Image(systemName: isFavorited ? "heart.fill" : "heart")
-                        .font(.system(size: 22, weight: .regular))
+                        .font(.system(size: 24, weight: .regular))
                         .foregroundStyle(isFavorited ? circleColor : .black)
                         .padding(16)
                 }
                 .glassEffect(.clear.interactive(), in: Circle())
                 .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
             }
-            .padding(.bottom, bottomInset + 24)
+            .padding(.bottom, bottomInset + 204)
         }
     }
 }
