@@ -139,6 +139,7 @@ struct FavoritesView: View {
     let favorites: Set<Int>
     let topInset: CGFloat
     let onBack: () -> Void
+    let onRemove: (Int) -> Void
 
     var favoriteQuotes: [QuoteData] {
         quotes.filter { favorites.contains($0.id) }
@@ -178,30 +179,55 @@ struct FavoritesView: View {
                         .padding(.horizontal, 80)
                     Spacer()
                 } else {
-                    List {
-                        ForEach(favoriteQuotes) { quote in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(quote.text)
-                                    .font(.custom("Lora-Regular", size: 16))
-                                Text(quote.author.uppercased())
-                                    .font(.custom("DMMono-Regular", size: 12))
-                                    .foregroundStyle(subtitleColor)
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(favoriteQuotes) { quote in
+                                VStack(alignment: .leading, spacing: 24) {
+                                    Text(quote.text)
+                                        .font(.custom("Lora-Regular", size: 20))
+                                    HStack {
+                                        Text(quote.author.uppercased())
+                                            .font(.custom("DMMono-Regular", size: 14))
+                                            .foregroundStyle(subtitleColor)
+                                        Spacer()
+                                        Menu {
+                                            Button(action: {
+                                                withAnimation(.easeOut(duration: 0.2)) {
+                                                    onRemove(quote.id)
+                                                }
+                                            }) {
+                                                Label("Remove", systemImage: "trash")
+                                            }
+                                        } label: {
+                                            Image(systemName: "ellipsis")
+                                                .font(.system(size: 16, weight: .regular))
+                                                .foregroundStyle(subtitleColor)
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    ZStack(alignment: .topLeading) {
+                                        Color.white
+                                        Circle()
+                                            .fill(circleColors[quote.id])
+                                            .frame(width: 71, height: 71)
+                                            .blur(radius: 40)
+                                            .offset(x: -10, y: -10)
+                                    }
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
+                                .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
+                                .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
                             }
-                            .padding(.vertical, 16)
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(circleColors[quote.id].opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
-                            .padding(.horizontal, 24)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 16)
+                        .padding(.bottom, 32)
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .padding(.top, 16)
                 }
             }
         }
@@ -527,6 +553,9 @@ struct ContentView: View {
                         withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                             showFavorites = false
                         }
+                    },
+                    onRemove: { id in
+                        toggleFavorite(id)
                     }
                 )
                 .frame(width: geo.size.width, height: geo.size.height)
