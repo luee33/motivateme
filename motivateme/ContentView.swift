@@ -441,7 +441,7 @@ struct ContentView: View {
                                     showProfile = true
                                 }
                             }) {
-                                Image(systemName: "person.circle")
+                                Image(systemName: "gearshape")
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.black)
                                     .padding(12)
