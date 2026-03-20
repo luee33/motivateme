@@ -191,6 +191,9 @@ struct FavoritesView: View {
                                             .foregroundStyle(subtitleColor)
                                         Spacer()
                                         Menu {
+                                            ShareLink(item: "\"\(quote.text)\" — \(quote.author)") {
+                                                Label("Share", systemImage: "square.and.arrow.up")
+                                            }
                                             Button(action: {
                                                 withAnimation(.easeOut(duration: 0.2)) {
                                                     onRemove(quote.id)
