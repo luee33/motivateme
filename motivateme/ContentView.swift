@@ -61,21 +61,17 @@ func dateString(for index: Int) -> String {
 // MARK: - ProfileView
 
 struct ProfileView: View {
-    let favorites: Set<Int>
     let topInset: CGFloat
+    let bottomInset: CGFloat
     let onBack: () -> Void
 
-    var favoriteQuotes: [QuoteData] {
-        quotes.filter { favorites.contains($0.id) }
-    }
-
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color(red: 250/255, green: 250/255, blue: 250/255).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 ZStack {
-                    Text("Profile")
+                    Text("Reminders")
                         .font(.system(size: 17, weight: .semibold))
                         .frame(maxWidth: .infinity)
 
@@ -94,40 +90,18 @@ struct ProfileView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, topInset + 64)
 
-                if favoriteQuotes.isEmpty {
-                    Spacer()
-                    Text("Your favorite quotes will show up here.")
-                        .font(.custom("DMMono-Regular", size: 14))
-                        .foregroundStyle(subtitleColor)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 80)
-                    Spacer()
-                } else {
-                    List {
-                        Section(header: Text("Favorites").padding(.horizontal, 24)) {
-                            ForEach(favoriteQuotes) { quote in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(quote.text)
-                                        .font(.custom("Lora-Regular", size: 16))
-                                    Text(quote.author.uppercased())
-                                        .font(.custom("DMMono-Regular", size: 12))
-                                        .foregroundStyle(subtitleColor)
-                                }
-                                .padding(.vertical, 16)
-                                .padding(.horizontal, 16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .padding(.horizontal, 24)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
+                Spacer()
+
+                Button(action: {}) {
+                    Text("Add reminder")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
                 }
+                .glassEffect(.regular.tint(Color(red: 0, green: 0, blue: 0)).interactive(), in: Capsule())
+                .padding(.horizontal, 24)
+                .padding(.bottom, bottomInset + 40)
             }
         }
     }
@@ -325,8 +299,8 @@ struct ContentView: View {
             ZStack {
                 // Profile page (sits to the left, slides in from left)
                 ProfileView(
-                    favorites: favorites,
                     topInset: geo.safeAreaInsets.top,
+                    bottomInset: geo.safeAreaInsets.bottom,
                     onBack: {
                         withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                             showProfile = false
