@@ -133,8 +133,9 @@ struct ReminderSheet: View {
                                         .font(.system(size: 12, weight: .medium))
                                         .foregroundStyle(subtitleColor)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            Spacer()
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             Toggle("", isOn: $isEnabled)
                                 .labelsHidden()
                                 .tint(Color.black)
@@ -163,13 +164,13 @@ struct ReminderSheet: View {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            .transition(.opacity)
                         }
 
                         Divider()
 
                         // Time
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 0) {
                             Text("TIME")
                                 .font(.custom("DMMono-Regular", size: 14))
                                 .foregroundStyle(subtitleColor)
@@ -179,7 +180,7 @@ struct ReminderSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .padding(20)
+                    .padding(16)
                     .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
