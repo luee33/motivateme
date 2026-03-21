@@ -58,20 +58,164 @@ func dateString(for index: Int) -> String {
     return f.string(from: date)
 }
 
+// MARK: - ReminderSheet
+
+enum RepeatOption: String, CaseIterable {
+    case everyday = "Everyday"
+    case weekdays = "Weekdays"
+    case weekends = "Weekends"
+    case custom = "Custom"
+}
+
+struct ReminderSheet: View {
+    @Binding var isPresented: Bool
+
+    @State private var isEnabled: Bool = true
+    @State private var time: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var repeatOption: RepeatOption = .everyday
+    @State private var customDays: Set<Int> = []
+
+    private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
+
+    var body: some View {
+        VStack(spacing: 0) {
+
+            // Header
+            ZStack {
+                Text("Reminder")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+
+                HStack {
+                    Spacer()
+                    Button(action: { isPresented = false }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.black)
+                            .padding(12)
+                    }
+                    .glassEffect(.clear.interactive(), in: Circle())
+                    .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 20)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+
+                    // Card: Dropdown + Toggle + Time + (Custom days)
+                    VStack(alignment: .leading, spacing: 24) {
+
+                        // Dropdown + toggle
+                        HStack {
+                            Menu {
+                                ForEach(RepeatOption.allCases, id: \.self) { option in
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            repeatOption = option
+                                        }
+                                    }) {
+                                        if repeatOption == option {
+                                            Label(option.rawValue, systemImage: "checkmark")
+                                        } else {
+                                            Text(option.rawValue)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text(repeatOption.rawValue)
+                                        .font(.custom("Lora-Regular", size: 20))
+                                        .foregroundStyle(.black)
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(subtitleColor)
+                                }
+                            }
+                            Spacer()
+                            Toggle("", isOn: $isEnabled)
+                                .labelsHidden()
+                                .tint(Color.black)
+                        }
+
+                        // Custom days (below dropdown)
+                        if repeatOption == .custom {
+                            HStack(spacing: 8) {
+                                ForEach(0..<7, id: \.self) { i in
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                            if customDays.contains(i) {
+                                                customDays.remove(i)
+                                            } else {
+                                                customDays.insert(i)
+                                            }
+                                        }
+                                    }) {
+                                        Text(dayLabels[i])
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(customDays.contains(i) ? .white : .black)
+                                            .frame(width: 40, height: 40)
+                                            .background(customDays.contains(i) ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
+                                            .clipShape(Circle())
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+
+                        Divider()
+
+                        // Time
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("TIME")
+                                .font(.custom("DMMono-Regular", size: 14))
+                                .foregroundStyle(subtitleColor)
+                            DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
+                                .datePickerStyle(.wheel)
+                                .labelsHidden()
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(20)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
+
+                    // Save button
+                    Button(action: { isPresented = false }) {
+                        Text("Save reminder")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity, minHeight: 56)
+                    }
+                    .background(Color.black)
+                    .clipShape(Capsule())
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
+            }
+        }
+        .background(Color(red: 250/255, green: 250/255, blue: 250/255))
+    }
+}
+
 // MARK: - ProfileView
 
 struct ProfileView: View {
     let topInset: CGFloat
-    let bottomInset: CGFloat
     let onBack: () -> Void
 
     var body: some View {
         ZStack {
-            Color(red: 250/255, green: 250/255, blue: 250/255).ignoresSafeArea()
+            Color.white.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 ZStack {
-                    Text("Reminders")
+                    Text("Settings")
                         .font(.system(size: 17, weight: .semibold))
                         .frame(maxWidth: .infinity)
 
@@ -91,17 +235,6 @@ struct ProfileView: View {
                 .padding(.top, topInset + 64)
 
                 Spacer()
-
-                Button(action: {}) {
-                    Text("Add reminder")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                }
-                .glassEffect(.regular.tint(Color(red: 0, green: 0, blue: 0)).interactive(), in: Capsule())
-                .padding(.horizontal, 24)
-                .padding(.bottom, bottomInset + 40)
             }
         }
     }
@@ -293,6 +426,7 @@ struct ContentView: View {
     @State private var horizontalDragOffset: CGFloat = 0
     @State private var showFavorites: Bool = false
     @State private var favDragOffset: CGFloat = 0
+    @State private var showReminder: Bool = false
 
     var body: some View {
         GeometryReader { geo in
@@ -300,7 +434,6 @@ struct ContentView: View {
                 // Profile page (sits to the left, slides in from left)
                 ProfileView(
                     topInset: geo.safeAreaInsets.top,
-                    bottomInset: geo.safeAreaInsets.bottom,
                     onBack: {
                         withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                             showProfile = false
@@ -418,7 +551,7 @@ struct ContentView: View {
                                     showProfile = true
                                 }
                             }) {
-                                Image(systemName: "bell")
+                                Image(systemName: "gearshape")
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.black)
                                     .padding(12)
@@ -426,12 +559,8 @@ struct ContentView: View {
                             .glassEffect(.clear.interactive(), in: Circle())
                             .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
 
-                            Button(action: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showProfile = true
-                                }
-                            }) {
-                                Image(systemName: "gearshape")
+                            Button(action: { showReminder = true }) {
+                                Image(systemName: "bell")
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.black)
                                     .padding(12)
@@ -578,6 +707,11 @@ struct ContentView: View {
         }
         .ignoresSafeArea()
         .preferredColorScheme(.light)
+        .sheet(isPresented: $showReminder) {
+            ReminderSheet(isPresented: $showReminder)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private func toggleFavorite(_ index: Int) {
