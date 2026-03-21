@@ -444,6 +444,19 @@ struct ContentView: View {
                                     showProfile = true
                                 }
                             }) {
+                                Image(systemName: "bell")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(.black)
+                                    .padding(12)
+                            }
+                            .glassEffect(.clear.interactive(), in: Circle())
+                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+
+                            Button(action: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                    showProfile = true
+                                }
+                            }) {
                                 Image(systemName: "gearshape")
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(.black)
