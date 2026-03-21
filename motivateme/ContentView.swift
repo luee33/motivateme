@@ -64,7 +64,7 @@ enum RepeatOption: String, CaseIterable {
     case everyday = "Everyday"
     case weekdays = "Weekdays"
     case weekends = "Weekends"
-    case custom = "Custom"
+    case custom = "Custom days"
 }
 
 struct ReminderSheet: View {
@@ -74,6 +74,7 @@ struct ReminderSheet: View {
     @State private var time: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var repeatOption: RepeatOption = .everyday
     @State private var customDays: Set<Int> = []
+    @State private var showTimePicker: Bool = false
 
     private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
 
@@ -87,15 +88,15 @@ struct ReminderSheet: View {
                     .frame(maxWidth: .infinity)
 
                 HStack {
-                    Spacer()
                     Button(action: { isPresented = false }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .medium))
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 18, weight: .regular))
                             .foregroundStyle(.black)
                             .padding(12)
                     }
                     .glassEffect(.clear.interactive(), in: Circle())
                     .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                    Spacer()
                 }
             }
             .padding(.horizontal, 24)
@@ -105,11 +106,30 @@ struct ReminderSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
 
-                    // Card: Dropdown + Toggle + Time + (Custom days)
-                    VStack(alignment: .leading, spacing: 24) {
+                    // Card: Dropdown + Toggle + (Custom days) + Time row
+                    VStack(alignment: .leading, spacing: 0) {
 
-                        // Dropdown + toggle
+                        // Tenet Reminder row
                         HStack {
+                            Text("Tenet Reminder")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundStyle(.black)
+                            Spacer()
+                            Toggle("", isOn: $isEnabled)
+                                .labelsHidden()
+                                .tint(Color.black)
+                        }
+                        .padding(.bottom, 16)
+
+                        Divider()
+                            .padding(.bottom, 16)
+
+                        // Repeat row
+                        HStack {
+                            Text("Repeat")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundStyle(.black)
+                            Spacer()
                             Menu {
                                 ForEach(RepeatOption.allCases, id: \.self) { option in
                                     Button(action: {
@@ -125,60 +145,94 @@ struct ReminderSheet: View {
                                     }
                                 }
                             } label: {
-                                HStack(spacing: 6) {
-                                    Text(repeatOption.rawValue)
-                                        .font(.custom("Lora-Regular", size: 20))
-                                        .foregroundStyle(.black)
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundStyle(subtitleColor)
+                                ZStack {
+                                    // Hidden widest option — drives the pill size
+                                    HStack(spacing: 6) {
+                                        Text("Custom days")
+                                            .font(.system(size: 15, weight: .regular))
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 11, weight: .medium))
+                                    }
+                                    .hidden()
+
+                                    HStack(spacing: 6) {
+                                        Text(repeatOption.rawValue)
+                                            .font(.system(size: 15, weight: .regular))
+                                            .foregroundStyle(.black)
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                                    }
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(red: 0.92, green: 0.92, blue: 0.92))
+                                .clipShape(Capsule())
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            Toggle("", isOn: $isEnabled)
-                                .labelsHidden()
-                                .tint(Color.black)
                         }
 
                         // Custom days (below dropdown)
-                        if repeatOption == .custom {
-                            HStack(spacing: 8) {
-                                ForEach(0..<7, id: \.self) { i in
-                                    Button(action: {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                            if customDays.contains(i) {
-                                                customDays.remove(i)
-                                            } else {
-                                                customDays.insert(i)
-                                            }
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { i in
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        if customDays.contains(i) {
+                                            customDays.remove(i)
+                                        } else {
+                                            customDays.insert(i)
                                         }
-                                    }) {
-                                        Text(dayLabels[i])
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundStyle(customDays.contains(i) ? .white : .black)
-                                            .frame(width: 40, height: 40)
-                                            .background(customDays.contains(i) ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
-                                            .clipShape(Circle())
                                     }
+                                }) {
+                                    Text(dayLabels[i])
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(customDays.contains(i) ? .white : .black)
+                                        .frame(width: 40, height: 40)
+                                        .background(customDays.contains(i) ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
+                                        .clipShape(Circle())
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .transition(.opacity)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: repeatOption == .custom ? nil : 0)
+                        .padding(.top, repeatOption == .custom ? 16 : 0)
+                        .opacity(repeatOption == .custom ? 1 : 0)
+                        .clipped()
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: repeatOption)
 
                         Divider()
+                            .padding(.top, 16)
 
-                        // Time
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("TIME")
-                                .font(.custom("DMMono-Regular", size: 14))
-                                .foregroundStyle(subtitleColor)
-                            DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
-                                .datePickerStyle(.wheel)
-                                .labelsHidden()
-                                .frame(maxWidth: .infinity)
+                        // Time row
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                showTimePicker.toggle()
+                            }
+                        }) {
+                            HStack {
+                                Text("Time")
+                                    .font(.system(size: 17, weight: .regular))
+                                    .foregroundStyle(.black)
+                                Spacer()
+                                Text(time, style: .time)
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(red: 0.92, green: 0.92, blue: 0.92))
+                                    .clipShape(Capsule())
+                            }
+                            .padding(.top, 16)
                         }
+
+                        // Collapsible time picker
+                        DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: showTimePicker ? nil : 0)
+                            .opacity(showTimePicker ? 1 : 0)
+                            .clipped()
+                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTimePicker)
                     }
                     .padding(16)
                     .background(Color.white)
@@ -186,16 +240,7 @@ struct ReminderSheet: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
 
-                    // Save button
-                    Button(action: { isPresented = false }) {
-                        Text("Save reminder")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 56)
-                    }
-                    .background(Color.black)
-                    .clipShape(Capsule())
-                }
+}
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
