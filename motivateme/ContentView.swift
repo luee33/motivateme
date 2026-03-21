@@ -603,6 +603,7 @@ struct ContentView: View {
             }
         }
         .ignoresSafeArea()
+        .preferredColorScheme(.light)
     }
 
     private func toggleFavorite(_ index: Int) {
