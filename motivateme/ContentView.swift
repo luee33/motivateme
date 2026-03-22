@@ -67,28 +67,156 @@ enum RepeatOption: String, CaseIterable {
     case custom = "Custom days"
 }
 
+private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
+
+struct Reminder: Identifiable {
+    let id = UUID()
+    var name: String
+    var time: Date
+    var isEnabled: Bool = true
+    var repeatOption: RepeatOption = .everyday
+    var customDays: Set<Int> = []
+}
+
 struct ReminderSheet: View {
     @Binding var isPresented: Bool
 
-    @State private var isEnabled: Bool = true
+    @State private var reminders: [Reminder] = []
+    @State private var showAddReminder: Bool = false
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                // Main reminders list
+                VStack(spacing: 0) {
+
+                    // Header
+                    ZStack {
+                        Text("Reminders")
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+
+                        HStack {
+                            Button(action: { isPresented = false }) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.black)
+                                    .padding(12)
+                            }
+                            .glassEffect(.clear.interactive(), in: Circle())
+                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+
+                            Spacer()
+
+                            Button(action: {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                    showAddReminder = true
+                                }
+                            }) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(12)
+                            }
+                            .background(Color.black)
+                            .clipShape(Circle())
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 20)
+
+                    if reminders.isEmpty {
+                        Spacer()
+                        Text("Your reminders will show up here.")
+                            .font(.custom("DMMono-Regular", size: 14))
+                            .foregroundStyle(subtitleColor)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 80)
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach($reminders) { $reminder in
+                                    HStack(alignment: .center, spacing: 16) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(reminder.time, style: .time)
+                                                .font(.custom("Lora-Regular", size: 32))
+                                                .foregroundStyle(.black)
+                                            if !reminder.name.isEmpty {
+                                                Text(reminder.name.uppercased())
+                                                    .font(.custom("DMMono-Regular", size: 14))
+                                                    .foregroundStyle(subtitleColor)
+                                            }
+                                        }
+                                        Spacer()
+                                        Toggle("", isOn: $reminder.isEnabled)
+                                            .labelsHidden()
+                                            .tint(Color.black)
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
+                                    .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 4)
+                            .padding(.bottom, 32)
+                        }
+                    }
+                }
+                .frame(width: geo.size.width)
+                .offset(x: showAddReminder ? -geo.size.width : 0)
+
+                // Add reminder view
+                AddReminderView(
+                    onBack: {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            showAddReminder = false
+                        }
+                    },
+                    onSave: { reminder in
+                        reminders.append(reminder)
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            showAddReminder = false
+                        }
+                    }
+                )
+                .frame(width: geo.size.width)
+                .offset(x: showAddReminder ? 0 : geo.size.width)
+            }
+            .animation(.spring(response: 0.38, dampingFraction: 0.82), value: showAddReminder)
+        }
+        .background(Color.white)
+    }
+}
+
+// MARK: - AddReminderView
+
+struct AddReminderView: View {
+    let onBack: () -> Void
+    let onSave: (Reminder) -> Void
+
     @State private var time: Date = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var repeatOption: RepeatOption = .everyday
     @State private var customDays: Set<Int> = []
     @State private var showTimePicker: Bool = false
-
-    private let dayLabels = ["S", "M", "T", "W", "T", "F", "S"]
 
     var body: some View {
         VStack(spacing: 0) {
 
             // Header
             ZStack {
-                Text("Reminders")
+                Text("New Reminder")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
 
                 HStack {
-                    Button(action: { isPresented = false }) {
+                    Button(action: onBack) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .regular))
                             .foregroundStyle(.black)
@@ -99,8 +227,10 @@ struct ReminderSheet: View {
 
                     Spacer()
 
-                    Button(action: {}) {
-                        Image(systemName: "plus")
+                    Button(action: {
+                        onSave(Reminder(name: "", time: time, repeatOption: repeatOption, customDays: customDays))
+                    }) {
+                        Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.white)
                             .padding(12)
@@ -113,15 +243,127 @@ struct ReminderSheet: View {
             .padding(.top, 24)
             .padding(.bottom, 20)
 
-            Spacer()
-            Text("Your reminders will show up here.")
-                .font(.custom("DMMono-Regular", size: 14))
-                .foregroundStyle(subtitleColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 80)
-            Spacer()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+
+                    // Settings card
+                    VStack(alignment: .leading, spacing: 0) {
+
+                        // Repeat row
+                        HStack {
+                            Text("Repeat")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundStyle(.black)
+                            Spacer()
+                            Menu {
+                                ForEach(RepeatOption.allCases, id: \.self) { option in
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            repeatOption = option
+                                        }
+                                    }) {
+                                        if repeatOption == option {
+                                            Label(option.rawValue, systemImage: "checkmark")
+                                        } else {
+                                            Text(option.rawValue)
+                                        }
+                                    }
+                                }
+                            } label: {
+                                ZStack {
+                                    HStack(spacing: 6) {
+                                        Text("Custom days")
+                                            .font(.system(size: 15, weight: .regular))
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 11, weight: .medium))
+                                    }
+                                    .hidden()
+
+                                    HStack(spacing: 6) {
+                                        Text(repeatOption.rawValue)
+                                            .font(.system(size: 15, weight: .regular))
+                                            .foregroundStyle(.black)
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(red: 0.92, green: 0.92, blue: 0.92))
+                                .clipShape(Capsule())
+                            }
+                        }
+
+                        // Custom days
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { i in
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                        if customDays.contains(i) { customDays.remove(i) } else { customDays.insert(i) }
+                                    }
+                                }) {
+                                    Text(dayLabels[i])
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(customDays.contains(i) ? .white : .black)
+                                        .frame(width: 40, height: 40)
+                                        .background(customDays.contains(i) ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
+                                        .clipShape(Circle())
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: repeatOption == .custom ? nil : 0)
+                        .padding(.top, repeatOption == .custom ? 16 : 0)
+                        .opacity(repeatOption == .custom ? 1 : 0)
+                        .clipped()
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: repeatOption)
+
+                        Divider()
+                            .padding(.top, 16)
+
+                        // Time row
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                showTimePicker.toggle()
+                            }
+                        }) {
+                            HStack {
+                                Text("Time")
+                                    .font(.system(size: 17, weight: .regular))
+                                    .foregroundStyle(.black)
+                                Spacer()
+                                Text(time, style: .time)
+                                    .font(.system(size: 15, weight: .regular))
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(red: 0.92, green: 0.92, blue: 0.92))
+                                    .clipShape(Capsule())
+                            }
+                            .padding(.top, 16)
+                        }
+
+                        DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: showTimePicker ? nil : 0)
+                            .opacity(showTimePicker ? 1 : 0)
+                            .clipped()
+                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTimePicker)
+                    }
+                    .padding(16)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
+                    .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
+            }
         }
-        .background(Color(red: 250/255, green: 250/255, blue: 250/255))
+        .background(Color.white)
     }
 }
 
