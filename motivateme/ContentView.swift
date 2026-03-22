@@ -83,7 +83,7 @@ struct ReminderSheet: View {
 
             // Header
             ZStack {
-                Text("Reminder")
+                Text("Reminders")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
 
@@ -96,154 +96,30 @@ struct ReminderSheet: View {
                     }
                     .glassEffect(.clear.interactive(), in: Circle())
                     .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+
                     Spacer()
+
+                    Button(action: {}) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding(12)
+                    }
+                    .background(Color.black)
+                    .clipShape(Circle())
                 }
             }
             .padding(.horizontal, 24)
             .padding(.top, 24)
             .padding(.bottom, 20)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-
-                    // Card: Dropdown + Toggle + (Custom days) + Time row
-                    VStack(alignment: .leading, spacing: 0) {
-
-                        // Tenet Reminder row
-                        HStack {
-                            Text("Tenet Reminder")
-                                .font(.system(size: 17, weight: .regular))
-                                .foregroundStyle(.black)
-                            Spacer()
-                            Toggle("", isOn: $isEnabled)
-                                .labelsHidden()
-                                .tint(Color.black)
-                        }
-                        .padding(.bottom, 16)
-
-                        Divider()
-                            .padding(.bottom, 16)
-
-                        // Repeat row
-                        HStack {
-                            Text("Repeat")
-                                .font(.system(size: 17, weight: .regular))
-                                .foregroundStyle(.black)
-                            Spacer()
-                            Menu {
-                                ForEach(RepeatOption.allCases, id: \.self) { option in
-                                    Button(action: {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                            repeatOption = option
-                                        }
-                                    }) {
-                                        if repeatOption == option {
-                                            Label(option.rawValue, systemImage: "checkmark")
-                                        } else {
-                                            Text(option.rawValue)
-                                        }
-                                    }
-                                }
-                            } label: {
-                                ZStack {
-                                    // Hidden widest option — drives the pill size
-                                    HStack(spacing: 6) {
-                                        Text("Custom days")
-                                            .font(.system(size: 15, weight: .regular))
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 11, weight: .medium))
-                                    }
-                                    .hidden()
-
-                                    HStack(spacing: 6) {
-                                        Text(repeatOption.rawValue)
-                                            .font(.system(size: 15, weight: .regular))
-                                            .foregroundStyle(.black)
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundStyle(Color(red: 0.6, green: 0.6, blue: 0.6))
-                                    }
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color(red: 0.92, green: 0.92, blue: 0.92))
-                                .clipShape(Capsule())
-                            }
-                        }
-
-                        // Custom days (below dropdown)
-                        HStack(spacing: 8) {
-                            ForEach(0..<7, id: \.self) { i in
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                        if customDays.contains(i) {
-                                            customDays.remove(i)
-                                        } else {
-                                            customDays.insert(i)
-                                        }
-                                    }
-                                }) {
-                                    Text(dayLabels[i])
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundStyle(customDays.contains(i) ? .white : .black)
-                                        .frame(width: 40, height: 40)
-                                        .background(customDays.contains(i) ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
-                                        .clipShape(Circle())
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .frame(height: repeatOption == .custom ? nil : 0)
-                        .padding(.top, repeatOption == .custom ? 16 : 0)
-                        .opacity(repeatOption == .custom ? 1 : 0)
-                        .clipped()
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: repeatOption)
-
-                        Divider()
-                            .padding(.top, 16)
-
-                        // Time row
-                        Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                showTimePicker.toggle()
-                            }
-                        }) {
-                            HStack {
-                                Text("Time")
-                                    .font(.system(size: 17, weight: .regular))
-                                    .foregroundStyle(.black)
-                                Spacer()
-                                Text(time, style: .time)
-                                    .font(.system(size: 15, weight: .regular))
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color(red: 0.92, green: 0.92, blue: 0.92))
-                                    .clipShape(Capsule())
-                            }
-                            .padding(.top, 16)
-                        }
-
-                        // Collapsible time picker
-                        DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
-                            .datePickerStyle(.wheel)
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: showTimePicker ? nil : 0)
-                            .opacity(showTimePicker ? 1 : 0)
-                            .clipped()
-                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTimePicker)
-                    }
-                    .padding(16)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
-                    .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
-
-}
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
-            }
+            Spacer()
+            Text("Your reminders will show up here.")
+                .font(.custom("DMMono-Regular", size: 14))
+                .foregroundStyle(subtitleColor)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 80)
+            Spacer()
         }
         .background(Color(red: 250/255, green: 250/255, blue: 250/255))
     }
