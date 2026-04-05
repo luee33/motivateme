@@ -734,19 +734,6 @@ struct ContentView: View {
 
                             Spacer()
 
-                            Button(action: { navigate(to: todayIndex, screenHeight: geo.size.height) }) {
-                                Text("Today")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.black)
-                                    .padding(.horizontal, 14)
-                            }
-                            .frame(height: 42)
-                            .glassEffect(.clear.interactive(), in: Capsule())
-                            .overlay(Capsule().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-                            .opacity(currentIndex != todayIndex ? 1 : 0)
-                            .disabled(currentIndex == todayIndex)
-                            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
-
                             Button(action: {
                                 withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
                                     showFavorites = true
@@ -763,6 +750,21 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, geo.safeAreaInsets.top + 64)
+                }
+                .overlay(alignment: .bottom) {
+                    Button(action: { navigate(to: todayIndex, screenHeight: geo.size.height) }) {
+                        Text("Today")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 14)
+                    }
+                    .frame(height: 42)
+                    .glassEffect(.clear.interactive(), in: Capsule())
+                    .overlay(Capsule().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                    .opacity(currentIndex != todayIndex ? 1 : 0)
+                    .disabled(currentIndex == todayIndex)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
+                    .padding(.bottom, geo.safeAreaInsets.bottom + 16)
                 }
                 .offset(x: (showProfile ? geo.size.width : showFavorites ? -geo.size.width : 0) + horizontalDragOffset + favDragOffset)
                 .simultaneousGesture(
