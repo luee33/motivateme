@@ -58,7 +58,7 @@ func dateString(for index: Int) -> String {
     return f.string(from: date)
 }
 
-// MARK: - ReminderSheet
+// MARK: - Reminder
 
 enum RepeatOption: String, CaseIterable {
     case everyday = "Everyday"
@@ -78,120 +78,95 @@ struct Reminder: Identifiable {
     var customDays: Set<Int> = []
 }
 
-struct ReminderSheet: View {
-    @Binding var isPresented: Bool
+// MARK: - AlarmsTabView
+
+struct AlarmsTabView: View {
+    let topInset: CGFloat
+    let bottomInset: CGFloat
 
     @State private var reminders: [Reminder] = []
     @State private var showAddReminder: Bool = false
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                // Main reminders list
-                VStack(spacing: 0) {
+        ZStack {
+            Color.white
 
-                    // Header
-                    ZStack {
-                        Text("Reminders")
-                            .font(.system(size: 17, weight: .semibold))
-                            .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                Spacer().frame(height: topInset)
 
-                        HStack {
-                            Button(action: { isPresented = false }) {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.black)
-                                    .padding(12)
-                            }
-                            .glassEffect(.clear.interactive(), in: Circle())
-                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-
-                            Spacer()
-
-                            Button(action: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showAddReminder = true
-                                }
-                            }) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(.white)
-                                    .padding(12)
-                            }
-                            .background(Color.black)
-                            .clipShape(Circle())
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 24)
-                    .padding(.bottom, 20)
-
-                    if reminders.isEmpty {
-                        Spacer()
-                        Text("Your reminders will show up here.")
-                            .font(.custom("DMMono-Regular", size: 14))
-                            .foregroundStyle(subtitleColor)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 80)
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 16) {
-                                ForEach($reminders) { $reminder in
-                                    HStack(alignment: .center, spacing: 16) {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(reminder.time, style: .time)
-                                                .font(.custom("Lora-Regular", size: 32))
-                                                .foregroundStyle(.black)
-                                            if !reminder.name.isEmpty {
-                                                Text(reminder.name.uppercased())
-                                                    .font(.custom("DMMono-Regular", size: 14))
-                                                    .foregroundStyle(subtitleColor)
-                                            }
+                if reminders.isEmpty {
+                    Spacer()
+                    Text("Your reminders will show up here.")
+                        .font(.custom("DMMono-Regular", size: 14))
+                        .foregroundStyle(subtitleColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 80)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach($reminders) { $reminder in
+                                HStack(alignment: .center, spacing: 16) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(reminder.time, style: .time)
+                                            .font(.custom("Lora-Regular", size: 32))
+                                            .foregroundStyle(.black)
+                                        if !reminder.name.isEmpty {
+                                            Text(reminder.name.uppercased())
+                                                .font(.custom("DMMono-Regular", size: 14))
+                                                .foregroundStyle(subtitleColor)
                                         }
-                                        Spacer()
-                                        Toggle("", isOn: $reminder.isEnabled)
-                                            .labelsHidden()
-                                            .tint(Color.black)
                                     }
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 16)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.white)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
-                                    .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
+                                    Spacer()
+                                    Toggle("", isOn: $reminder.isEnabled)
+                                        .labelsHidden()
+                                        .tint(Color.black)
                                 }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.black.opacity(0.05), lineWidth: 1))
+                                .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 6)
                             }
-                            .padding(.horizontal, 24)
-                            .padding(.top, 4)
-                            .padding(.bottom, 32)
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 16)
+                        .padding(.bottom, bottomInset + 80)
                     }
                 }
-                .frame(width: geo.size.width)
-                .offset(x: showAddReminder ? -geo.size.width : 0)
-
-                // Add reminder view
-                AddReminderView(
-                    onBack: {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                            showAddReminder = false
-                        }
-                    },
-                    onSave: { reminder in
-                        reminders.append(reminder)
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                            showAddReminder = false
-                        }
-                    }
-                )
-                .frame(width: geo.size.width)
-                .offset(x: showAddReminder ? 0 : geo.size.width)
             }
-            .animation(.spring(response: 0.38, dampingFraction: 0.82), value: showAddReminder)
+
+            // Add reminder FAB
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: { showAddReminder = true }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.white)
+                            .padding(16)
+                    }
+                    .background(Color.black)
+                    .clipShape(Circle())
+                    .padding(.trailing, 24)
+                    .padding(.bottom, bottomInset + 24)
+                }
+            }
         }
-        .background(Color.white)
+        .sheet(isPresented: $showAddReminder) {
+            AddReminderView(
+                onBack: { showAddReminder = false },
+                onSave: { reminder in
+                    reminders.append(reminder)
+                    showAddReminder = false
+                }
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 
@@ -367,49 +342,22 @@ struct AddReminderView: View {
     }
 }
 
-// MARK: - ProfileView
+// MARK: - SettingsView
 
-struct ProfileView: View {
-    let topInset: CGFloat
-    let onBack: () -> Void
-
+struct SettingsView: View {
     var body: some View {
-        ZStack {
-            Color.white.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                ZStack {
-                    Text("Settings")
-                        .font(.system(size: 17, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-
-                    HStack {
-                        Spacer()
-                        Button(action: onBack) {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundStyle(.black)
-                                .padding(12)
-                        }
-                        .glassEffect(.clear.interactive(), in: Circle())
-                        .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, topInset + 64)
-
-                Spacer()
-            }
-        }
+        Color.white.ignoresSafeArea()
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-// MARK: - FavoritesView
+// MARK: - FavoritesTabView
 
-struct FavoritesView: View {
+struct FavoritesTabView: View {
     let favorites: Set<Int>
     let topInset: CGFloat
-    let onBack: () -> Void
+    let bottomInset: CGFloat
     let onRemove: (Int) -> Void
 
     var favoriteQuotes: [QuoteData] {
@@ -417,29 +365,11 @@ struct FavoritesView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            Color.white.ignoresSafeArea()
+        ZStack {
+            Color.white
 
             VStack(spacing: 0) {
-                ZStack {
-                    Text("Favorites")
-                        .font(.system(size: 17, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-
-                    HStack {
-                        Button(action: onBack) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundStyle(.black)
-                                .padding(12)
-                        }
-                        .glassEffect(.clear.interactive(), in: Circle())
-                        .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-                        Spacer()
-                    }
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, topInset + 64)
+                Spacer().frame(height: topInset)
 
                 if favoriteQuotes.isEmpty {
                     Spacer()
@@ -500,7 +430,7 @@ struct FavoritesView: View {
                         }
                         .padding(.horizontal, 24)
                         .padding(.top, 16)
-                        .padding(.bottom, 32)
+                        .padding(.bottom, bottomInset + 32)
                     }
                 }
             }
@@ -586,298 +516,207 @@ struct ContentView: View {
     @State private var dragOffset: CGFloat = 0
     @State private var isAnimating: Bool = false
     @State private var favorites: Set<Int> = []
-    @State private var showProfile: Bool = false
-    @State private var horizontalDragOffset: CGFloat = 0
-    @State private var showFavorites: Bool = false
-    @State private var favDragOffset: CGFloat = 0
-    @State private var showReminder: Bool = false
+    @State private var showSettings: Bool = false
+    @State private var selectedTab: Int = 0
+    @State private var tabDragOffset: CGFloat = 0
+
+    private let tabLabels = ["Today", "Alarms", "Favorites"]
 
     var body: some View {
+        NavigationStack {
+        VStack(spacing: 0) {
+            // Pill tabs — directly under nav bar
+            HStack(spacing: 8) {
+                ForEach(Array(tabLabels.enumerated()), id: \.offset) { i, label in
+                    Button(action: {
+                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                            selectedTab = i
+                        }
+                    }) {
+                        Text(label)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(selectedTab == i ? .white : .black)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(selectedTab == i ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
+                            .clipShape(Capsule())
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(Color.white)
+
         GeometryReader { geo in
             ZStack {
-                // Profile page (sits to the left, slides in from left)
-                ProfileView(
-                    topInset: geo.safeAreaInsets.top,
-                    onBack: {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                            showProfile = false
-                        }
-                    }
-                )
-                .frame(width: geo.size.width, height: geo.size.height)
-                .offset(x: (showProfile ? 0 : -geo.size.width) + horizontalDragOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { value in
-                            guard showProfile else { return }
-                            let dx = value.translation.width
-                            guard dx < 0 && abs(dx) > abs(value.translation.height) else { return }
-                            horizontalDragOffset = dx
-                        }
-                        .onEnded { value in
-                            guard showProfile else { return }
-                            let dx = value.translation.width
-                            let vx = value.predictedEndTranslation.width
-                            if dx < -geo.size.width * 0.25 || vx < -500 {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showProfile = false
-                                    horizontalDragOffset = 0
-                                }
-                            } else {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    horizontalDragOffset = 0
-                                }
-                            }
-                        }
-                )
-
-                // Cards page
+                // Main content: all 3 tabs
                 ZStack {
-                    // Previous card (above)
-                    if currentIndex > 0 {
-                        CardView(
-                            color: pastelColors[currentIndex - 1],
-                            circleColor: circleColors[currentIndex - 1],
-                            bottomInset: geo.safeAreaInsets.bottom,
-                            quote: quotes[currentIndex - 1],
-                            index: currentIndex - 1,
-                            isFavorited: favorites.contains(currentIndex - 1),
-                            onFavorite: { toggleFavorite(currentIndex - 1) }
-                        )
-                        .offset(y: -geo.size.height + dragOffset)
-                    }
-
-                    // Next card (below)
-                    if currentIndex < pastelColors.count - 1 {
-                        CardView(
-                            color: pastelColors[currentIndex + 1],
-                            circleColor: circleColors[currentIndex + 1],
-                            bottomInset: geo.safeAreaInsets.bottom,
-                            quote: quotes[currentIndex + 1],
-                            index: currentIndex + 1,
-                            isFavorited: favorites.contains(currentIndex + 1),
-                            onFavorite: { toggleFavorite(currentIndex + 1) }
-                        )
-                        .offset(y: geo.size.height + dragOffset)
-                    }
-
-                    // Current card
-                    CardView(
-                        color: pastelColors[currentIndex],
-                        circleColor: circleColors[currentIndex],
-                        bottomInset: geo.safeAreaInsets.bottom,
-                        quote: quotes[currentIndex],
-                        index: currentIndex,
-                        isFavorited: favorites.contains(currentIndex),
-                        onFavorite: { toggleFavorite(currentIndex) }
-                    )
-                    .offset(y: dragOffset)
-                }
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            guard !isAnimating else { return }
-                            let translation = value.translation.height
-                            if (currentIndex == 0 && translation > 0) ||
-                               (currentIndex == pastelColors.count - 1 && translation < 0) {
-                                dragOffset = translation * 0.15
-                            } else {
-                                dragOffset = translation
-                            }
-                        }
-                        .onEnded { value in
-                            guard !isAnimating else { return }
-                            let threshold: CGFloat = geo.size.height * 0.25
-                            let velocity = value.predictedEndTranslation.height
-
-                            if (value.translation.height < -threshold || velocity < -500),
-                               currentIndex < pastelColors.count - 1 {
-                                navigate(to: currentIndex + 1, screenHeight: geo.size.height)
-                            } else if (value.translation.height > threshold || velocity > 500),
-                                      currentIndex > 0 {
-                                navigate(to: currentIndex - 1, screenHeight: geo.size.height)
-                            } else {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    dragOffset = 0
-                                }
-                            }
-                        }
-                )
-                .overlay(alignment: .top) {
+                    // Tab 0: Quotes
                     ZStack {
-                        Text("Sonnet")
-                            .font(.system(size: 17, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-
-                        HStack {
-                            Button(action: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showProfile = true
-                                }
-                            }) {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 18, weight: .regular))
-                                    .foregroundStyle(.black)
-                                    .padding(12)
-                            }
-                            .glassEffect(.clear.interactive(), in: Circle())
-                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-
-                            Button(action: { showReminder = true }) {
-                                Image(systemName: "bell")
-                                    .font(.system(size: 18, weight: .regular))
-                                    .foregroundStyle(.black)
-                                    .padding(12)
-                            }
-                            .glassEffect(.clear.interactive(), in: Circle())
-                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-
-                            Spacer()
-
-                            Button(action: {
-                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showFavorites = true
-                                }
-                            }) {
-                                Image(systemName: "heart")
-                                    .font(.system(size: 18, weight: .regular))
-                                    .foregroundStyle(.black)
-                                    .padding(12)
-                            }
-                            .glassEffect(.clear.interactive(), in: Circle())
-                            .overlay(Circle().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                        if currentIndex > 0 {
+                            CardView(
+                                color: pastelColors[currentIndex - 1],
+                                circleColor: circleColors[currentIndex - 1],
+                                bottomInset: geo.safeAreaInsets.bottom,
+                                quote: quotes[currentIndex - 1],
+                                index: currentIndex - 1,
+                                isFavorited: favorites.contains(currentIndex - 1),
+                                onFavorite: { toggleFavorite(currentIndex - 1) }
+                            )
+                            .offset(y: -geo.size.height + dragOffset)
                         }
+
+                        if currentIndex < pastelColors.count - 1 {
+                            CardView(
+                                color: pastelColors[currentIndex + 1],
+                                circleColor: circleColors[currentIndex + 1],
+                                bottomInset: geo.safeAreaInsets.bottom,
+                                quote: quotes[currentIndex + 1],
+                                index: currentIndex + 1,
+                                isFavorited: favorites.contains(currentIndex + 1),
+                                onFavorite: { toggleFavorite(currentIndex + 1) }
+                            )
+                            .offset(y: geo.size.height + dragOffset)
+                        }
+
+                        CardView(
+                            color: pastelColors[currentIndex],
+                            circleColor: circleColors[currentIndex],
+                            bottomInset: geo.safeAreaInsets.bottom,
+                            quote: quotes[currentIndex],
+                            index: currentIndex,
+                            isFavorited: favorites.contains(currentIndex),
+                            onFavorite: { toggleFavorite(currentIndex) }
+                        )
+                        .offset(y: dragOffset)
                     }
-                    .padding(.horizontal, 24)
-                    .padding(.top, geo.safeAreaInsets.top + 64)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                guard !isAnimating && selectedTab == 0 else { return }
+                                let translation = value.translation.height
+                                if (currentIndex == 0 && translation > 0) ||
+                                   (currentIndex == pastelColors.count - 1 && translation < 0) {
+                                    dragOffset = translation * 0.15
+                                } else {
+                                    dragOffset = translation
+                                }
+                            }
+                            .onEnded { value in
+                                guard !isAnimating && selectedTab == 0 else { return }
+                                let threshold: CGFloat = geo.size.height * 0.25
+                                let velocity = value.predictedEndTranslation.height
+
+                                if (value.translation.height < -threshold || velocity < -500),
+                                   currentIndex < pastelColors.count - 1 {
+                                    navigate(to: currentIndex + 1, screenHeight: geo.size.height)
+                                } else if (value.translation.height > threshold || velocity > 500),
+                                          currentIndex > 0 {
+                                    navigate(to: currentIndex - 1, screenHeight: geo.size.height)
+                                } else {
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                                        dragOffset = 0
+                                    }
+                                }
+                            }
+                    )
+                    .offset(x: CGFloat(0 - selectedTab) * geo.size.width + tabDragOffset)
+
+                    // Tab 1: Alarms
+                    AlarmsTabView(topInset: 0, bottomInset: geo.safeAreaInsets.bottom)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .offset(x: CGFloat(1 - selectedTab) * geo.size.width + tabDragOffset)
+
+                    // Tab 2: Favorites
+                    FavoritesTabView(
+                        favorites: favorites,
+                        topInset: 0,
+                        bottomInset: geo.safeAreaInsets.bottom,
+                        onRemove: toggleFavorite
+                    )
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .offset(x: CGFloat(2 - selectedTab) * geo.size.width + tabDragOffset)
                 }
                 .overlay(alignment: .bottom) {
-                    Button(action: { navigate(to: todayIndex, screenHeight: geo.size.height) }) {
-                        Text("Today")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, 14)
+                    if selectedTab == 0 {
+                        Button(action: { navigate(to: todayIndex, screenHeight: geo.size.height) }) {
+                            Text("Today")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 14)
+                        }
+                        .frame(height: 42)
+                        .glassEffect(.clear.interactive(), in: Capsule())
+                        .overlay(Capsule().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
+                        .opacity(currentIndex != todayIndex ? 1 : 0)
+                        .disabled(currentIndex == todayIndex)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
+                        .padding(.bottom, geo.safeAreaInsets.bottom + 16)
                     }
-                    .frame(height: 42)
-                    .glassEffect(.clear.interactive(), in: Capsule())
-                    .overlay(Capsule().stroke(Color(red: 0.878, green: 0.878, blue: 0.878), lineWidth: 0.5))
-                    .opacity(currentIndex != todayIndex ? 1 : 0)
-                    .disabled(currentIndex == todayIndex)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: currentIndex)
-                    .padding(.bottom, geo.safeAreaInsets.bottom + 16)
                 }
-                .offset(x: (showProfile ? geo.size.width : showFavorites ? -geo.size.width : 0) + horizontalDragOffset + favDragOffset)
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 20)
                         .onChanged { value in
                             let dx = value.translation.width
                             guard abs(dx) > abs(value.translation.height) else { return }
-                            if !showProfile && !showFavorites {
-                                if dx > 0 {
-                                    horizontalDragOffset = dx
-                                } else {
-                                    favDragOffset = dx
-                                }
-                            } else if showProfile && dx < 0 {
-                                horizontalDragOffset = dx
-                            } else if showFavorites && dx > 0 {
-                                favDragOffset = dx
+                            if dx < 0 && selectedTab < 2 {
+                                tabDragOffset = dx
+                            } else if dx > 0 && selectedTab > 0 {
+                                tabDragOffset = dx
                             }
                         }
                         .onEnded { value in
                             let dx = value.translation.width
                             let vx = value.predictedEndTranslation.width
-                            if !showProfile && !showFavorites {
-                                if dx > geo.size.width * 0.25 || vx > 500 {
-                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                        showProfile = true
-                                        horizontalDragOffset = 0
-                                    }
-                                } else if dx < -geo.size.width * 0.25 || vx < -500 {
-                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                        showFavorites = true
-                                        favDragOffset = 0
-                                    }
-                                } else {
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                        horizontalDragOffset = 0
-                                        favDragOffset = 0
-                                    }
-                                }
-                            } else if showProfile {
-                                if dx < -geo.size.width * 0.25 || vx < -500 {
-                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                        showProfile = false
-                                        horizontalDragOffset = 0
-                                    }
-                                } else {
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                        horizontalDragOffset = 0
-                                    }
-                                }
-                            } else if showFavorites {
-                                if dx > geo.size.width * 0.25 || vx > 500 {
-                                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                        showFavorites = false
-                                        favDragOffset = 0
-                                    }
-                                } else {
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                        favDragOffset = 0
-                                    }
-                                }
-                            }
-                        }
-                )
-
-                // Favorites page (sits to the right, slides in from right)
-                FavoritesView(
-                    favorites: favorites,
-                    topInset: geo.safeAreaInsets.top,
-                    onBack: {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                            showFavorites = false
-                        }
-                    },
-                    onRemove: { id in
-                        toggleFavorite(id)
-                    }
-                )
-                .frame(width: geo.size.width, height: geo.size.height)
-                .offset(x: (showFavorites ? 0 : geo.size.width) + favDragOffset)
-                .gesture(
-                    DragGesture(minimumDistance: 20)
-                        .onChanged { value in
-                            guard showFavorites else { return }
-                            let dx = value.translation.width
-                            guard dx > 0 && abs(dx) > abs(value.translation.height) else { return }
-                            favDragOffset = dx
-                        }
-                        .onEnded { value in
-                            guard showFavorites else { return }
-                            let dx = value.translation.width
-                            let vx = value.predictedEndTranslation.width
-                            if dx > geo.size.width * 0.25 || vx > 500 {
+                            if (dx < -geo.size.width * 0.25 || vx < -500) && selectedTab < 2 {
                                 withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                                    showFavorites = false
-                                    favDragOffset = 0
+                                    selectedTab += 1
+                                    tabDragOffset = 0
+                                }
+                            } else if (dx > geo.size.width * 0.25 || vx > 500) && selectedTab > 0 {
+                                withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                    selectedTab -= 1
+                                    tabDragOffset = 0
                                 }
                             } else {
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                                    favDragOffset = 0
+                                    tabDragOffset = 0
                                 }
                             }
                         }
                 )
             }
+            .clipped()
         }
-        .ignoresSafeArea()
         .preferredColorScheme(.light)
-        .sheet(isPresented: $showReminder) {
-            ReminderSheet(isPresented: $showReminder)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+        .navigationTitle("Sonnet")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { showSettings = true }) {
+                    Image(systemName: "gearshape")
+                        .foregroundStyle(.black)
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                        selectedTab = 1
+                    }
+                }) {
+                    Image(systemName: "bell")
+                        .foregroundStyle(.black)
+                }
+            }
         }
+        .navigationDestination(isPresented: $showSettings) {
+            SettingsView()
+        }
+        } // VStack
+        .ignoresSafeArea(edges: .bottom)
+        } // NavigationStack
     }
 
     private func toggleFavorite(_ index: Int) {
