@@ -511,6 +511,13 @@ struct CardView: View {
 
 // MARK: - ContentView
 
+private struct PillWidthsKey: PreferenceKey {
+    static var defaultValue: [Int: CGFloat] = [:]
+    static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
 struct ContentView: View {
     @State private var currentIndex: Int = 0
     @State private var dragOffset: CGFloat = 0
@@ -519,35 +526,49 @@ struct ContentView: View {
     @State private var showSettings: Bool = false
     @State private var selectedTab: Int = 0
     @State private var tabDragOffset: CGFloat = 0
+    @State private var pillWidths: [Int: CGFloat] = [:]
 
     private let tabLabels = ["Today", "Alarms", "Favorites"]
 
     var body: some View {
         NavigationStack {
         VStack(spacing: 0) {
-            // Pill tabs — directly under nav bar
-            HStack(spacing: 8) {
-                ForEach(Array(tabLabels.enumerated()), id: \.offset) { i, label in
-                    Button(action: {
-                        withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                            selectedTab = i
+            // Pill carousel — active pill always centered
+            GeometryReader { pillGeo in
+                HStack(spacing: 12) {
+                    ForEach(Array(tabLabels.enumerated()), id: \.offset) { i, label in
+                        Button(action: {
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                                selectedTab = i
+                            }
+                        }) {
+                            Text(label)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(selectedTab == i ? .white : .black)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(selectedTab == i ? Color.black : Color.clear)
+                                .clipShape(Capsule())
                         }
-                    }) {
-                        Text(label)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(selectedTab == i ? .white : .black)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(selectedTab == i ? Color.black : Color(red: 0.94, green: 0.94, blue: 0.94))
-                            .clipShape(Capsule())
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: PillWidthsKey.self,
+                                    value: [i: geo.size.width]
+                                )
+                            }
+                        )
                     }
                 }
-                Spacer()
+                .offset(x: pillCarouselOffset(screenWidth: pillGeo.size.width))
+                .animation(.spring(response: 0.38, dampingFraction: 0.82), value: selectedTab)
+                .animation(.interactiveSpring(response: 0.3, dampingFraction: 0.8), value: tabDragOffset)
             }
-            .padding(.horizontal, 24)
+            .frame(height: 36)
+            .clipped()
             .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
             .background(Color.white)
+            .onPreferenceChange(PillWidthsKey.self) { pillWidths = $0 }
 
         GeometryReader { geo in
             ZStack {
@@ -691,14 +712,18 @@ struct ContentView: View {
             .clipped()
         }
         .preferredColorScheme(.light)
-        .navigationTitle("Sonnet")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { showSettings = true }) {
                     Image(systemName: "gearshape")
-                        .foregroundStyle(.black)
                 }
+            }
+            ToolbarItem(placement: .principal) {
+                Text("Tenet")
+                    .font(.system(size: 24, weight: .semibold))
+                    .kerning(-0.03 * 24)
+                    .foregroundStyle(.black)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
@@ -707,7 +732,6 @@ struct ContentView: View {
                     }
                 }) {
                     Image(systemName: "bell")
-                        .foregroundStyle(.black)
                 }
             }
         }
@@ -717,6 +741,28 @@ struct ContentView: View {
         } // VStack
         .ignoresSafeArea(edges: .bottom)
         } // NavigationStack
+    }
+
+    private func pillCarouselOffset(screenWidth: CGFloat) -> CGFloat {
+        let spacing: CGFloat = 12
+
+        func centerX(of tab: Int) -> CGFloat {
+            var x: CGFloat = 0
+            for j in 0..<tab { x += (pillWidths[j] ?? 60) + spacing }
+            return x + (pillWidths[tab] ?? 60) / 2
+        }
+
+        let base = screenWidth / 2 - centerX(of: selectedTab)
+        guard tabDragOffset != 0 else { return base }
+
+        let progress = tabDragOffset / screenWidth
+        let target = progress < 0
+            ? min(selectedTab + 1, tabLabels.count - 1)
+            : max(selectedTab - 1, 0)
+        guard target != selectedTab else { return base }
+
+        let targetBase = screenWidth / 2 - centerX(of: target)
+        return base + (targetBase - base) * abs(progress)
     }
 
     private func toggleFavorite(_ index: Int) {
