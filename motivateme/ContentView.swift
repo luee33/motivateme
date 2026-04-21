@@ -438,6 +438,29 @@ struct FavoritesTabView: View {
     }
 }
 
+// MARK: - SettingsTabView
+
+struct SettingsTabView: View {
+    let topInset: CGFloat
+    let bottomInset: CGFloat
+
+    var body: some View {
+        ZStack {
+            Color.white
+            VStack(spacing: 0) {
+                Spacer().frame(height: topInset)
+                Spacer()
+                Text("Settings coming soon.")
+                    .font(.custom("DMMono-Regular", size: 14))
+                    .foregroundStyle(subtitleColor)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 80)
+                Spacer()
+            }
+        }
+    }
+}
+
 // MARK: - CardView
 
 struct CardView: View {
@@ -528,7 +551,7 @@ struct ContentView: View {
     @State private var tabDragOffset: CGFloat = 0
     @State private var pillWidths: [Int: CGFloat] = [:]
 
-    private let tabLabels = ["Today", "Alarms", "Favorites"]
+    private let tabLabels = ["Today", "Alarms", "Favorites", "Settings"]
 
     var body: some View {
         NavigationStack {
@@ -659,6 +682,11 @@ struct ContentView: View {
                     )
                     .frame(width: geo.size.width, height: geo.size.height)
                     .offset(x: CGFloat(2 - selectedTab) * geo.size.width + tabDragOffset)
+
+                    // Tab 3: Settings
+                    SettingsTabView(topInset: 0, bottomInset: geo.safeAreaInsets.bottom)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .offset(x: CGFloat(3 - selectedTab) * geo.size.width + tabDragOffset)
                 }
                 .overlay(alignment: .bottom) {
                     if selectedTab == 0 {
